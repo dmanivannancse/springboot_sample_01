@@ -1,6 +1,6 @@
 # Spring Boot OAuth2 Example
 
-This project is a Spring Boot application demonstrating OAuth2 integration with Keycloak and Google.
+This project is a Spring Boot application demonstrating OAuth2 integration with Keycloak-Github and Google.
 
 ## Configuration
 
