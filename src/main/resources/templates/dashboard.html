@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-
+<meta name="_csrf_token" content="[[${_csrf.token}]]" />
+    <meta name="_csrf_header" content="[[${_csrf.headerName}]]" />
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+
     <title>Dashboard - OAuth2 Security Demo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 
 <body>
@@ -19,47 +24,545 @@
             </div>
         </div>
     </nav>
-
+    <div id="myDiv"
+     th:attr="csrfTokenValue=${csrfTokenValue}, csrfHeaderName=${csrfHeaderName}">
+</div>
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="text-center">Welcome to Dashboard</h2>
+                        <h2 class="text-center">
+                            Welcome! 
+                            <span th:text="${name}" style="color: #198754; font-weight: bold;">NA</span>
+                        </h2>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-success" role="alert">
+                        <style>
+                            body {
+                                background: linear-gradient(135deg, #d1e7dd 0%, #b6dfc5 100%);
+                                min-height: 100vh;
+                            }
+                            #auth-success-alert {
+                                background-color: #d1e7dd !important;
+                                border-color: #badbcc !important;
+                                color: #0f5132 !important;
+                            }
+                            .btn-close.rounded-circle {
+                                background-color: #fff;
+                                border-radius: 50% !important;
+                                border: 1px solid #badbcc;
+                                width: 16px;
+                                height: 16px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                opacity: 1;
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+                                transition: background 0.2s;
+                                font-size: 0.7rem;
+                            }
+                            .btn-close.rounded-circle:hover {
+                                background-color: #e2e3e5;
+                            }
+                        </style>
+                        <div class="alert alert-success position-relative" role="alert" id="auth-success-alert">
+                            <button type="button" class="btn-close rounded-circle position-absolute" aria-label="Close"
+                                style="top: -8px; right: -8px; z-index: 2; transform: scale(1);"
+                                onclick="document.getElementById('auth-success-alert').style.display='none';"></button>
                             <h4 class="alert-heading">Authentication Successful!</h4>
                             <p>You have successfully logged in using OAuth2.</p>
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6">
-                                <h5>User Information:</h5>
-                                <ul class="list-group">
-                                    <li class="list-group-item">
+                            <div class="col-12 d-flex flex-column align-items-center mb-4">
+                                <img th:src="${imageUrl}" alt="Image" class="rounded-circle mb-3"
+                                    style="width:100px; height:100px; object-fit:cover; display:block; margin:0 auto;">
+                                <ul class="list-group w-auto text-center">
+                                    <li class="list-group-item px-3">
                                         <strong>Name:</strong> <span th:text="${name}">N/A</span>
                                     </li>
-                                    <li class="list-group-item">
+                                    <li class="list-group-item px-3">
                                         <strong>Email:</strong> <span th:text="${email}">N/A</span>
                                     </li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h5>Security Context:</h5>
-                                <ul class="list-group">
-                                    <li class="list-group-item">
+                                    <li class="list-group-item px-3">
                                         <strong>Authenticated:</strong>
                                         <span sec:authorize="isAuthenticated()">Yes</span>
                                         <span sec:authorize="!isAuthenticated()">No</span>
                                     </li>
-                                    <li class="list-group-item">
+                                    <li class="list-group-item px-3">
                                         <strong>Username:</strong>
                                         <span sec:authentication="name">N/A</span>
                                     </li>
                                 </ul>
                             </div>
                         </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">Todo List</h4>
+                            <button type="button" class="btn btn-success" id="add-todo-btn" title="Add Todo">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
+                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Search and Filter Controls -->
+                        <div class="row p-3">
+                            <div class="col-md-6 mb-2">
+                                <input type="text" id="todo-search-input" class="form-control" placeholder="Search notes...">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <select id="todo-filter-select" class="form-select">
+                                    <option value="all">All</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+                        </div>
+                       
+
+                        <!-- Add Todo Modal -->
+                        <div class="modal fade" id="addTodoModal" tabindex="-1" aria-labelledby="addTodoModalLabel" aria-hidden="true">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <form id="add-todo-form">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="addTodoModalLabel">Add New Todo</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="new-todo-note" class="form-label">Note</label>
+                                        <input type="text" class="form-control" id="new-todo-note" required>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="new-todo-completed">
+                                        <label class="form-check-label" for="new-todo-completed">Completed</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                  <button type="submit" class="btn btn-primary">Save Todo</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+
+                        <table class="table table-hover mb-0" id="todo-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Note</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Complete</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="todo, iterStat : ${todos}" class="swipe-row position-relative">
+                                    <th scope="row" th:text="${iterStat.count}">1</th>
+                                    <td>
+                                        <span th:text="${todo.note}" th:id="'note-span-' + ${todo.id}">Sample note</span>
+                                        <input type="text" th:value="${todo.note}" th:id="'note-input-' + ${todo.id}" class="form-control form-control-sm d-inline-block d-none" style="width: 70%;" />
+                                    </td>
+                                    <td>
+                                        <span th:if="${todo.completed}" class="badge bg-success">Completed</span>
+                                        <span th:unless="${todo.completed}" class="badge bg-warning text-dark">Pending</span>
+                                    </td>
+                                    <td>
+                                        <input type="checkbox" th:checked="${todo.completed}" th:data-id="${todo.id}"
+                                            class="form-check-input todo-complete-checkbox" />
+                                    </td>
+                                    <td style="position:relative;">
+                                        <div class="swipe-actions d-flex gap-1" style="position:absolute; right:0; top:0; height:100%; display:none; z-index:2;">
+                                            <!-- Edit icon -->
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-1 todo-edit-btn"
+                                                th:data-id="${todo.id}" title="Edit">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                                                    <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-4 1.5a.5.5 0 0 1-.65-.65l1.5-4a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 12.793 5.5 10.5 3.207 11.207 2.5zm1.586 3L10.5 3.207 3 10.707V13h2.293l7.5-7.5z"/>
+                                                </svg>
+                                            </button>
+                                            <!-- Delete icon -->
+                                            <button type="button" class="btn btn-sm btn-outline-danger todo-delete-btn"
+                                                th:data-id="${todo.id}" title="Delete">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5.5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6zm3 .5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6z"/>
+                                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2h3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1H14a1 1 0 0 1 1 1zm-11 1v9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4h-8z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <!-- Save icon -->
+                                        <button type="button" class="btn btn-sm btn-outline-success me-1 todo-save-btn d-none"
+                                            th:data-id="${todo.id}" title="Save">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
+                                                <path d="M13.485 1.929a.75.75 0 0 1 1.06 1.06l-8.25 8.25a.75.75 0 0 1-1.06 0l-4.25-4.25a.75.75 0 0 1 1.06-1.06l3.72 3.72 7.72-7.72z"/>
+                                            </svg>
+                                        </button>
+                                        <!-- Cancel icon -->
+                                        <button type="button" class="btn btn-sm btn-outline-secondary me-1 todo-cancel-btn d-none"
+                                            th:data-id="${todo.id}" title="Cancel">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                                                <path d="M2.146 2.146a.5.5 0 0 1 .708 0L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854a.5.5 0 0 1 0-.708z"/>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    // Touch/Mouse swipe logic for each row
+                                    document.querySelectorAll('.swipe-row').forEach(function(row) {
+                                        let startX = 0, currentX = 0, swiped = false;
+                                        const actions = row.querySelector('.swipe-actions');
+
+                                        // Touch events
+                                        row.addEventListener('touchstart', function(e) {
+                                            startX = e.touches[0].clientX;
+                                            swiped = false;
+                                        });
+                                        row.addEventListener('touchmove', function(e) {
+                                            currentX = e.touches[0].clientX;
+                                            if (startX - currentX > 50 && !swiped) { // swipe left
+                                                actions.style.display = 'flex';
+                                                swiped = true;
+                                            }
+                                            if (currentX - startX > 50 && swiped) { // swipe right to hide
+                                                actions.style.display = 'none';
+                                                swiped = false;
+                                            }
+                                        });
+                                        row.addEventListener('touchend', function() {
+                                            // Optionally, auto-hide after some time
+                                        });
+
+                                        // Mouse events for desktop
+                                        let mouseDown = false;
+                                        row.addEventListener('mousedown', function(e) {
+                                            mouseDown = true;
+                                            startX = e.clientX;
+                                            swiped = false;
+                                        });
+                                        row.addEventListener('mousemove', function(e) {
+                                            if (!mouseDown) return;
+                                            currentX = e.clientX;
+                                            if (startX - currentX > 50 && !swiped) {
+                                                actions.style.display = 'flex';
+                                                swiped = true;
+                                            }
+                                            if (currentX - startX > 50 && swiped) {
+                                                actions.style.display = 'none';
+                                                swiped = false;
+                                            }
+                                        });
+                                        row.addEventListener('mouseup', function() {
+                                            mouseDown = false;
+                                        });
+
+                                        // Hide actions when clicking elsewhere
+                                        document.addEventListener('click', function(e) {
+                                            if (!row.contains(e.target)) {
+                                                actions.style.display = 'none';
+                                                swiped = false;
+                                            }
+                                        });
+                                    });
+                                });
+                                </script>
+                                <style>
+                                .swipe-row {
+                                    transition: background 0.2s;
+                                    touch-action: pan-y;
+                                }
+                                .swipe-row .swipe-actions {
+                                    min-width: 90px;
+                                    background: #fff;
+                                    border-radius: 0 0.5rem 0.5rem 0;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+                                    align-items: center;
+                                    justify-content: flex-end;
+                                    padding: 0 0.5rem;
+                                    height: 100%;
+                                }
+                                </style>
+                            </tbody>
+                        </table>
+                        <!-- Add space below the todo list table -->
+                        <div style="height: 32px;"></div>
+
+
+                        <!-- Add Todo Modal Script -->
+                        <script inline="javascript">
+                        document.addEventListener('DOMContentLoaded', function () {
+                            // Bootstrap modal instance
+                            let addTodoModal = null;
+                            if (window.bootstrap) {
+                                addTodoModal = new bootstrap.Modal(document.getElementById('addTodoModal'));
+                            }
+
+                            document.getElementById('add-todo-btn').addEventListener('click', function () {
+                                document.getElementById('add-todo-form').reset();
+                                if (addTodoModal) {
+                                    addTodoModal.show();
+                                } else {
+                                    $('#addTodoModal').modal('show');
+                                }
+                            });
+
+                            document.getElementById('add-todo-form').addEventListener('submit', function (e) {
+                                e.preventDefault();
+                                const note = document.getElementById('new-todo-note').value.trim();
+                                const completed = document.getElementById('new-todo-completed').checked;
+
+                                if (!note) {
+                                    alert('Note is required');
+                                    return;
+                                }
+
+                                const div = document.getElementById('myDiv');
+                                const token = div.getAttribute('csrfTokenValue');
+                                const csrfHeader = div.getAttribute('csrfHeaderName');
+                                const headers = new Headers();
+                                headers.append('Content-Type', 'application/json');
+                                headers.append(csrfHeader, token);
+
+                                fetch('api/todo', {
+                                    method: 'POST',
+                                    headers: headers,
+                                    body: JSON.stringify({ note: note, completed: completed })
+                                }).then(response => response.json())
+                                .then(data => {
+                                    if (data && data.id) {
+                                        // Add new row to table
+                                        const table = document.getElementById('todo-table').querySelector('tbody');
+                                        const rowCount = table.rows.length + 1;
+                                        const newRow = document.createElement('tr');
+                                        newRow.innerHTML = `
+                                            <th scope="row">${rowCount}</th>
+                                            <td>
+                                                <span id="note-span-${data.id}">${data.note}</span>
+                                                <input type="text" value="${data.note}" id="note-input-${data.id}" class="form-control form-control-sm d-inline-block d-none" style="width: 70%;" />
+                                            </td>
+                                            <td>
+                                                <span class="badge ${data.completed ? 'bg-success' : 'bg-warning text-dark'}">${data.completed ? 'Completed' : 'Pending'}</span>
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" class="form-check-input todo-complete-checkbox" data-id="${data.id}" ${data.completed ? 'checked' : ''} />
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-primary me-1 todo-edit-btn" data-id="${data.id}" title="Edit">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                                                        <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-4 1.5a.5.5 0 0 1-.65-.65l1.5-4a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 12.793 5.5 10.5 3.207 11.207 2.5zm1.586 3L10.5 3.207 3 10.707V13h2.293l7.5-7.5z"/>
+                                                    </svg>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-success me-1 todo-save-btn d-none" data-id="${data.id}" title="Save">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
+                                                        <path d="M13.485 1.929a.75.75 0 0 1 1.06 1.06l-8.25 8.25a.75.75 0 0 1-1.06 0l-4.25-4.25a.75.75 0 0 1 1.06-1.06l3.72 3.72 7.72-7.72z"/>
+                                                    </svg>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary me-1 todo-cancel-btn d-none" data-id="${data.id}" title="Cancel">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                                                        <path d="M2.146 2.146a.5.5 0 0 1 .708 0L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854a.5.5 0 0 1 0-.708z"/>
+                                                    </svg>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger todo-delete-btn" data-id="${data.id}" title="Delete">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5.5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6zm3 .5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6z"/>
+                                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2h3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1H14a1 1 0 0 1 1 1zm-11 1v9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4h-8z"/>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        `;
+                                        table.appendChild(newRow);
+
+                                        // Re-attach event listeners for new row
+                                        // Edit, Save, Cancel, Delete, Complete checkbox
+                                        // (You may want to refactor this to a function for DRY)
+                                        // For brevity, reload the page or call location.reload() if you want to keep logic simple
+
+                                        location.reload(); // Remove this if you want to attach handlers manually
+
+                                        if (addTodoModal) {
+                                            addTodoModal.hide();
+                                        } else {
+                                            $('#addTodoModal').modal('hide');
+                                        }
+                                    } else {
+                                        alert('Failed to add todo');
+                                    }
+                                })
+                                .catch(() => alert('Failed to add todo'));
+                            });
+                        });
+                        </script>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const searchInput = document.getElementById('todo-search-input');
+                            const filterSelect = document.getElementById('todo-filter-select');
+                            const table = document.getElementById('todo-table');
+                            const rows = table.querySelectorAll('tbody tr');
+
+                            function filterTable() {
+                                const searchValue = searchInput.value.toLowerCase();
+                                const filterValue = filterSelect.value;
+
+                                rows.forEach(row => {
+                                    const note = row.querySelector('span[id^="note-span-"]').textContent.toLowerCase();
+                                    const completed = row.querySelector('.todo-complete-checkbox').checked;
+                                    let show = true;
+
+                                    // Search filter
+                                    if (searchValue && !note.includes(searchValue)) {
+                                        show = false;
+                                    }
+
+                                    // Status filter
+                                    if (filterValue === 'completed' && !completed) {
+                                        show = false;
+                                    } else if (filterValue === 'pending' && completed) {
+                                        show = false;
+                                    }
+
+                                    row.style.display = show ? '' : 'none';
+                                });
+                            }
+
+                            searchInput.addEventListener('input', filterTable);
+                            filterSelect.addEventListener('change', filterTable);
+                        });
+                        </script>
+                        <script th:inline="javascript">
+                            document.addEventListener('DOMContentLoaded', function () {
+                                // Edit button
+                                document.querySelectorAll('.todo-edit-btn').forEach(function (btn) {
+                                    btn.addEventListener('click', function () {
+                                        const id = this.getAttribute('data-id');
+                                        const row = this.closest('tr');
+                                        row.querySelector('.todo-edit-btn').classList.add('d-none');
+                                        row.querySelector('.todo-save-btn').classList.remove('d-none');
+                                        row.querySelector('.todo-cancel-btn').classList.remove('d-none');
+                                        row.querySelector('span[id^="note-span-"]').classList.add('d-none');
+                                        row.querySelector('input[id^="note-input-"]').classList.remove('d-none');
+                                    });
+                                });
+
+                                // Cancel button
+                                document.querySelectorAll('.todo-cancel-btn').forEach(function (btn) {
+                                    btn.addEventListener('click', function () {
+                                        const id = this.getAttribute('data-id');
+                                        const row = this.closest('tr');
+                                        row.querySelector('.todo-edit-btn').classList.remove('d-none');
+                                        row.querySelector('.todo-save-btn').classList.add('d-none');
+                                        row.querySelector('.todo-cancel-btn').classList.add('d-none');
+                                        row.querySelector('span[id^="note-span-"]').classList.remove('d-none');
+                                        row.querySelector('input[id^="note-input-"]').classList.add('d-none');
+                                    });
+                                });
+
+                                // Save button
+                                document.querySelectorAll('.todo-save-btn').forEach(function (btn) {
+                                    btn.addEventListener('click', function () {
+                                        const id = this.getAttribute('data-id');
+                                        const row = this.closest('tr');
+                                        const input = row.querySelector('input[id^="note-input-"]');
+                                        const newNote = input.value.trim();
+
+                                        const div = document.getElementById('myDiv');
+                                        const token = div.getAttribute('csrfTokenValue');
+                                        const csrfHeader = div.getAttribute('csrfHeaderName');
+                                        const headers = new Headers();
+                                        headers.append('Content-Type', 'application/json');
+                                        headers.append(csrfHeader, token);
+
+                                        fetch('api/todo/' + id, {
+                                            method: 'PUT',
+                                            headers: headers,
+                                            body: JSON.stringify({ note: newNote, completed: row.querySelector('.todo-complete-checkbox').checked })
+                                        }).then(response => {
+                                            if (response.ok) {
+                                                row.querySelector('span[id^="note-span-"]').textContent = newNote;
+                                                row.querySelector('.todo-edit-btn').classList.remove('d-none');
+                                                row.querySelector('.todo-save-btn').classList.add('d-none');
+                                                row.querySelector('.todo-cancel-btn').classList.add('d-none');
+                                                row.querySelector('span[id^="note-span-"]').classList.remove('d-none');
+                                                row.querySelector('input[id^="note-input-"]').classList.add('d-none');
+                                            } else {
+                                                alert('Failed to update todo');
+                                            }
+                                        });
+                                    });
+                                });
+
+                                // Hide all input fields initially
+                                document.querySelectorAll('input[id^="note-input-"]').forEach(function (input) {
+                                    input.classList.add('d-none');
+                                });
+
+                                // Delete button
+                                document.querySelectorAll('.todo-delete-btn').forEach(function (btn) {
+                                    btn.addEventListener('click', function () {
+                                        const id = this.getAttribute('data-id');
+                                        if (confirm('Are you sure you want to delete this todo?')) {
+                                            const div = document.getElementById('myDiv');
+                                            const token = div.getAttribute('csrfTokenValue');
+                                            const csrfHeader = div.getAttribute('csrfHeaderName');
+                                            const headers = new Headers();
+                                            headers.append(csrfHeader, token);
+
+                                            fetch('api/todo/' + id, {
+                                                method: 'DELETE',
+                                                headers: headers
+                                            }).then(response => {
+                                                if (response.ok) {
+                                                    this.closest('tr').remove();
+                                                } else {
+                                                    alert('Failed to delete todo');
+                                                }
+                                            });
+                                        }
+                                    });
+                                });
+                            });
+                        </script>
+                        <script th:inline="javascript">
+
+                            document.addEventListener('DOMContentLoaded', function () {
+                                document.querySelectorAll('.todo-complete-checkbox').forEach(function (checkbox) {
+                                    checkbox.addEventListener('change', function () {
+                                        const todoId = this.getAttribute('data-id');
+                                        const noteText = this.closest('tr').querySelector('td').textContent.trim();
+                                        const completed = this.checked;
+
+                                       const div = document.getElementById('myDiv');
+const token = div.getAttribute('csrfTokenValue');
+const csrfHeader = div.getAttribute('csrfHeaderName');
+console.log('Token:', token);
+console.log('CSRF Header:', csrfHeader);
+                                        const headers = new Headers();
+                                        headers.append('Content-Type', 'application/json');
+                                        headers.append(csrfHeader, token);
+
+                                        fetch('api/todo/' + todoId, {
+                                            method: 'PUT',
+                                            headers: headers,
+                                            body: JSON.stringify({ note: noteText, completed: completed })
+                                        }).then(response => {
+                                            if (!response.ok) {
+                                                alert('Failed to update todo status');
+                                                this.checked = !completed; // revert checkbox
+                                            }
+                                        });
+                                    });
+                                });
+                            });
+
+                        </script>
                     </div>
                 </div>
             </div>
